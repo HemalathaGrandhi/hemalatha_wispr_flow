@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wispr Flow — Product Analytics & Funnel Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        flow: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                            darkBg: '#090a0f',
+                            cardBg: 'rgba(18, 20, 29, 0.75)',
+                            cardBorder: 'rgba(139, 92, 246, 0.15)',
+                            accent: '#6366f1',
+                            neon: '#a855f7',
+                            cyan: '#06b6d4',
+                            emerald: '#10b981'
+                        }
+                    },
+                    boxShadow: {
+                        'glow-purple': '0 0 25px -5px rgba(139, 92, 246, 0.3)',
+                        'glow-cyan': '0 0 25px -5px rgba(6, 182, 212, 0.3)',
+                        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #08090d;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(124, 58, 237, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(99, 102, 241, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: #f3f4f6;
+        }
+
+        .glass-card {
+            background: rgba(15, 17, 26, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .glass-card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card-hover:hover {
+            border-color: rgba(167, 139, 250, 0.3);
+            box-shadow: 0 10px 30px -10px rgba(124, 58, 237, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .glass-pill {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 17, 26, 0.5);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.3);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(139, 92, 246, 0.6);
+        }
+
+        /* Custom styling for range input */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #a78bfa;
+            cursor: pointer;
+            box-shadow: 0 0 12px rgba(167, 139, 250, 0.8);
+            margin-top: -6px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #1f2937;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen custom-scrollbar pb-12">
+
+    <!-- Header / Navbar -->
+    <header class="sticky top-0 z-50 glass-card border-b border-white/10 px-4 lg:px-8 py-3 mb-6">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            
+            <!-- Brand & Title -->
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 via-indigo-500 to-cyan-400 p-[1px] flex items-center justify-center shadow-glow-purple">
+                    <div class="w-full h-full bg-slate-950 rounded-[11px] flex items-center justify-center">
+                        <i data-lucide="mic" class="w-5 h-5 text-violet-400 animate-pulse"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                            Wispr Flow
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 font-mono font-normal border border-violet-500/30">Analytics</span>
+                        </h1>
+                        <span class="text-xs text-slate-500 hidden sm:inline">| Built for <span class="text-slate-300 font-semibold">BuildrLabs</span></span>
+                    </div>
+                    <p class="text-xs text-slate-400">User Activation, Retention & App-Usage Funnel Intelligence</p>
+                </div>
+            </div>
+
+            <!-- Controls & Filters -->
+            <div class="flex flex-wrap items-center gap-3">
+                <!-- Live Status Indicator -->
+                <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg glass-pill text-xs text-slate-300">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span class="font-mono text-emerald-400" id="livePulse">LIVE SYNC</span>
+                </div>
+
+                <!-- Platform Selector -->
+                <div class="relative">
+                    <select id="platformSelect" onchange="updateDashboardData()" class="bg-slate-900/80 text-xs font-medium text-slate-200 border border-slate-700/60 rounded-lg px-3 py-1.5 focus:outline-none focus:border-violet-500 cursor-pointer">
+                        <option value="all">📱 All Platforms</option>
+                        <option value="macos">💻 macOS</option>
+                        <option value="windows">🪟 Windows</option>
+                        <option value="ios">📲 iOS</option>
+                        <option value="android">🤖 Android</option>
+                    </select>
+                </div>
+
+                <!-- Time Range Filter -->
+                <div class="flex bg-slate-900/90 rounded-lg p-1 border border-slate-800 text-xs font-medium" id="timeRangeGroup">
+                    <button onclick="setTimeRange('7D')" class="time-btn px-3 py-1 rounded-md text-slate-400 hover:text-white transition-all" data-range="7D">7 Days</button>
+                    <button onclick="setTimeRange('30D')" class="time-btn px-3 py-1 rounded-md text-white bg-violet-600 shadow-sm transition-all" data-range="30D">30 Days</button>
+                    <button onclick="setTimeRange('90D')" class="time-btn px-3 py-1 rounded-md text-slate-400 hover:text-white transition-all" data-range="90D">90 Days</button>
+                </div>
+
+                <!-- Refresh Button -->
+                <button onclick="triggerSimulatedRefresh()" title="Refresh Dashboard Metrics" class="p-1.5 rounded-lg glass-pill text-slate-300 hover:text-violet-300 hover:border-violet-500/50 transition-all">
+                    <i data-lucide="refresh-cw" class="w-4 h-4" id="refreshIcon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 lg:px-8 space-y-6">
+
+        <!-- 1. Executive KPI Cards -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <!-- KPI 1: Active Users -->
+            <div class="glass-card glass-card-hover rounded-2xl p-5 relative overflow-hidden">
+                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-violet-600/10 rounded-full blur-2xl"></div>
+                <div class="flex justify-between items-start mb-3">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Active Users Ratio</span>
+                    <span class="p-2 rounded-xl bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                        <i data-lucide="users" class="w-4 h-4"></i>
+                    </span>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-extrabold text-white font-mono" id="kpiDauMau">42.8%</span>
+                    <span class="text-xs font-semibold text-emerald-400 flex items-center gap-0.5">
+                        <i data-lucide="trending-up" class="w-3 h-3"></i> +3.4%
+                    </span>
+                </div>
+                <div class="mt-3 flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-white/5">
+                    <span>DAU: <strong class="text-slate-200" id="kpiDauVal">18.4k</strong></span>
+                    <span>MAU: <strong class="text-slate-200" id="kpiMauVal">43.0k</strong></span>
+                </div>
+            </div>
+
+            <!-- KPI 2: Avg Time-to-First-Dictation -->
+            <div class="glass-card glass-card-hover rounded-2xl p-5 relative overflow-hidden">
+                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-cyan-600/10 rounded-full blur-2xl"></div>
+                <div class="flex justify-between items-start mb-3">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Avg Time-To-Dictation</span>
+                    <span class="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                        <i data-lucide="zap" class="w-4 h-4"></i>
+                    </span>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-extrabold text-white font-mono" id="kpiTimeToDict">4.2 min</span>
+                    <span class="text-xs font-semibold text-emerald-400 flex items-center gap-0.5">
+                        <i data-lucide="arrow-down-right" class="w-3 h-3"></i> -1.1m target
+                    </span>
+                </div>
+                <div class="mt-3 flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-white/5">
+                    <span>Target Goal: <strong class="text-cyan-300">&lt; 5.0 mins</strong></span>
+                    <span class="text-emerald-400 font-medium">94.2% On-Target</span>
+                </div>
+            </div>
+
+            <!-- KPI 3: Pro Conversion Rate -->
+            <div class="glass-card glass-card-hover rounded-2xl p-5 relative overflow-hidden">
+                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-purple-600/10 rounded-full blur-2xl"></div>
+                <div class="flex justify-between items-start mb-3">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Pro Conversion Rate</span>
+                    <span class="p-2 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    </span>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-extrabold text-white font-mono" id="kpiConversionRate">4.82%</span>
+                    <span class="text-xs font-semibold text-emerald-400 flex items-center gap-0.5">
+                        <i data-lucide="trending-up" class="w-3 h-3"></i> +0.6%
+                    </span>
+                </div>
+                <div class="mt-3 flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-white/5">
+                    <span>Main Trigger: <strong class="text-purple-300">Word Limits</strong></span>
+                    <span>ARR Impact: <strong class="text-slate-200">+$24.2k</strong></span>
+                </div>
+            </div>
+
+            <!-- KPI 4: Multi-Homing Score -->
+            <div class="glass-card glass-card-hover rounded-2xl p-5 relative overflow-hidden">
+                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-indigo-600/10 rounded-full blur-2xl"></div>
+                <div class="flex justify-between items-start mb-3">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">App Multi-Homing Score</span>
+                    <span class="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                        <i data-lucide="layers" class="w-4 h-4"></i>
+                    </span>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-extrabold text-white font-mono" id="kpiMultiHoming">2.75</span>
+                    <span class="text-xs font-semibold text-slate-400">contexts / user</span>
+                </div>
+                <div class="mt-3 flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-white/5">
+                    <span>Dev + Messaging: <strong class="text-indigo-300">68% Overlap</strong></span>
+                    <span class="text-indigo-400 font-medium">High Stickiness</span>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- 2. Onboarding & Time-to-First-Dictation Funnel -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Onboarding Funnel Chart -->
+            <div class="lg:col-span-7 glass-card rounded-2xl p-6 border border-white/10 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 class="text-base font-bold text-white flex items-center gap-2">
+                                <i data-lucide="filter" class="w-4 h-4 text-violet-400"></i>
+                                Onboarding Activation Funnel
+                            </h2>
+                            <p class="text-xs text-slate-400">Conversion breakdown from initial download to first active dictation session</p>
+                        </div>
+                        <span class="text-xs px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 font-mono" id="funnelTotalUsers">Total: 28,450 Users</span>
+                    </div>
+
+                    <!-- Visual Funnel Progress Cards -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
+                        <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-800">
+                            <span class="text-[10px] text-slate-400 block font-semibold uppercase">1. Download</span>
+                            <span class="text-lg font-bold text-white font-mono">100%</span>
+                            <span class="text-[11px] text-slate-400 block">28,450 users</span>
+                        </div>
+                        <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-800">
+                            <span class="text-[10px] text-slate-400 block font-semibold uppercase">2. First Launch</span>
+                            <span class="text-lg font-bold text-violet-300 font-mono">88.4%</span>
+                            <span class="text-[11px] text-slate-400 block">25,150 users</span>
+                        </div>
+                        <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-800">
+                            <span class="text-[10px] text-slate-400 block font-semibold uppercase">3. Mic Access</span>
+                            <span class="text-lg font-bold text-cyan-300 font-mono">76.2%</span>
+                            <span class="text-[11px] text-slate-400 block">21,680 users</span>
+                        </div>
+                        <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-800 bg-gradient-to-br from-violet-950/40 to-slate-900">
+                            <span class="text-[10px] text-violet-300 block font-semibold uppercase">4. First Dictation</span>
+                            <span class="text-lg font-bold text-emerald-400 font-mono">68.5%</span>
+                            <span class="text-[11px] text-slate-400 block">19,488 users</span>
+                        </div>
+                    </div>
+
+                    <!-- Canvas Funnel -->
+                    <div class="h-56 relative w-full">
+                        <canvas id="activationFunnelChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Time-to-First-Dictation Distribution -->
+            <div class="lg:col-span-5 glass-card rounded-2xl p-6 border border-white/10 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 class="text-base font-bold text-white flex items-center gap-2">
+                                <i data-lucide="clock" class="w-4 h-4 text-cyan-400"></i>
+                                Speed to First Dictation
+                            </h2>
+                            <p class="text-xs text-slate-400">Distribution of elapsed time post-installation</p>
+                        </div>
+                    </div>
+
+                    <div class="h-56 relative w-full my-auto">
+                        <canvas id="timeDistributionChart"></canvas>
+                    </div>
+
+                    <div class="mt-4 p-3 rounded-xl bg-violet-950/30 border border-violet-800/30 flex items-start gap-3">
+                        <i data-lucide="lightbulb" class="w-5 h-5 text-violet-400 shrink-0 mt-0.5"></i>
+                        <div class="text-xs text-slate-300">
+                            <strong class="text-violet-300">Activation Insight:</strong> Users who dictate within <strong class="text-white">&lt;2 minutes</strong> show a <strong class="text-emerald-400">3.2x higher 30-day retention rate</strong> compared to those taking &gt;15 mins.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- 3. App Multi-Homing & Dictation Contexts -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Category Distribution Donut & Metrics -->
+            <div class="lg:col-span-5 glass-card rounded-2xl p-6 border border-white/10">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i data-lucide="layout-grid" class="w-4 h-4 text-indigo-400"></i>
+                            Dictation Context Breakdown
+                        </h2>
+                        <p class="text-xs text-slate-400">Where Wispr Flow is used across workflows</p>
+                    </div>
+                </div>
+
+                <div class="h-56 relative w-full mb-4">
+                    <canvas id="multiHomingChart"></canvas>
+                </div>
+
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center text-xs p-2 rounded-lg bg-slate-900/50">
+                        <span class="flex items-center gap-2 text-slate-300">
+                            <span class="w-2.5 h-2.5 rounded-full bg-violet-500"></span> Messaging (Slack, WhatsApp, Teams)
+                        </span>
+                        <span class="font-mono text-white font-semibold">41.5%</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs p-2 rounded-lg bg-slate-900/50">
+                        <span class="flex items-center gap-2 text-slate-300">
+                            <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span> Dev Environments (Cursor, VS Code, Term)
+                        </span>
+                        <span class="font-mono text-white font-semibold">34.2%</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs p-2 rounded-lg bg-slate-900/50">
+                        <span class="flex items-center gap-2 text-slate-300">
+                            <span class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span> Email & Docs (Gmail, Notion, Linear)
+                        </span>
+                        <span class="font-mono text-white font-semibold">24.3%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Volume, Voice Shortcuts & Platform Matrix -->
+            <div class="lg:col-span-7 glass-card rounded-2xl p-6 border border-white/10 flex flex-col justify-between">
+                <div>
+                    <!-- Tabs Header -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3 mb-4">
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i data-lucide="cpu" class="w-4 h-4 text-purple-400"></i>
+                            Context Usage Deep-Dive
+                        </h2>
+                        
+                        <div class="flex bg-slate-900 p-0.5 rounded-lg text-xs">
+                            <button onclick="switchContextTab('volume')" id="tabVolBtn" class="px-3 py-1 rounded-md text-white bg-violet-600 font-medium">Dictated Volume</button>
+                            <button onclick="switchContextTab('shortcuts')" id="tabShortcutsBtn" class="px-3 py-1 rounded-md text-slate-400 hover:text-white">Top Voice Shortcuts</button>
+                            <button onclick="switchContextTab('overlap')" id="tabOverlapBtn" class="px-3 py-1 rounded-md text-slate-400 hover:text-white">Platform Overlap</button>
+                        </div>
+                    </div>
+
+                    <!-- Tab 1: Dictated Volume -->
+                    <div id="tabContentVolume" class="space-y-3">
+                        <div class="text-xs text-slate-400 mb-2">Monthly aggregate dictated word counts per application target:</div>
+                        
+                        <div class="space-y-2.5">
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-200 font-medium flex items-center gap-1.5">💬 Slack / WhatsApp / Discord</span>
+                                    <span class="font-mono text-violet-300">14.2M Words / mo</span>
+                                </div>
+                                <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                                    <div class="h-full bg-violet-500 rounded-full" style="width: 85%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-200 font-medium flex items-center gap-1.5">💻 Cursor / VS Code / Terminal</span>
+                                    <span class="font-mono text-cyan-300">11.8M Words / mo</span>
+                                </div>
+                                <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                                    <div class="h-full bg-cyan-400 rounded-full" style="width: 72%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-200 font-medium flex items-center gap-1.5">✉️ Gmail / Superhuman / Outlook</span>
+                                    <span class="font-mono text-indigo-300">8.4M Words / mo</span>
+                                </div>
+                                <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                                    <div class="h-full bg-indigo-500 rounded-full" style="width: 52%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-200 font-medium flex items-center gap-1.5">📝 Notion / Craft / Apple Notes</span>
+                                    <span class="font-mono text-emerald-300">5.1M Words / mo</span>
+                                </div>
+                                <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                                    <div class="h-full bg-emerald-400 rounded-full" style="width: 35%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 2: Top Voice Shortcuts -->
+                    <div id="tabContentShortcuts" class="hidden space-y-3">
+                        <div class="text-xs text-slate-400 mb-2">Most triggered voice-formatting macros and custom voice commands:</div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
+                                <div class="flex justify-between text-xs font-semibold text-violet-300 mb-1">
+                                    <span>"Fix Grammar & Formatting"</span>
+                                    <span class="font-mono text-slate-400">42% usage</span>
+                                </div>
+                                <p class="text-[11px] text-slate-400">Auto-cleans filler words, applies bullet points and correct punctuation seamlessly.</p>
+                            </div>
+                            <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
+                                <div class="flex justify-between text-xs font-semibold text-cyan-300 mb-1">
+                                    <span>"Convert to Code Block / Doc"</span>
+                                    <span class="font-mono text-slate-400">28% usage</span>
+                                </div>
+                                <p class="text-[11px] text-slate-400">Formats spoken logic into structured JS/Python comments or Markdown syntax.</p>
+                            </div>
+                            <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
+                                <div class="flex justify-between text-xs font-semibold text-emerald-300 mb-1">
+                                    <span>"Summarize into PR Description"</span>
+                                    <span class="font-mono text-slate-400">18% usage</span>
+                                </div>
+                                <p class="text-[11px] text-slate-400">Generates concise change summaries directly into GitHub/GitLab textboxes.</p>
+                            </div>
+                            <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
+                                <div class="flex justify-between text-xs font-semibold text-indigo-300 mb-1">
+                                    <span>"Reply Slack Tone"</span>
+                                    <span class="font-mono text-slate-400">12% usage</span>
+                                </div>
+                                <p class="text-[11px] text-slate-400">Transforms quick thoughts into friendly, concise async team updates.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 3: Platform Overlap -->
+                    <div id="tabContentOverlap" class="hidden space-y-3">
+                        <div class="text-xs text-slate-400 mb-2">Cross-platform synchronization and multi-device active usage:</div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left text-slate-300">
+                                <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px]">
+                                    <tr>
+                                        <th class="p-2">Platform Pair</th>
+                                        <th class="p-2">Co-Active Users</th>
+                                        <th class="p-2">Stickiness Boost</th>
+                                        <th class="p-2">Primary Workflow</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800">
+                                    <tr>
+                                        <td class="p-2 font-medium text-white">macOS + iOS</td>
+                                        <td class="p-2 font-mono text-violet-300">12,400 (62%)</td>
+                                        <td class="p-2 text-emerald-400">+48% LTV</td>
+                                        <td class="p-2 text-slate-400">Desk & Mobile dictation sync</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2 font-medium text-white">Windows + Android</td>
+                                        <td class="p-2 font-mono text-cyan-300">5,100 (25%)</td>
+                                        <td class="p-2 text-emerald-400">+34% LTV</td>
+                                        <td class="p-2 text-slate-400">Enterprise workspace dictation</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2 font-medium text-white">macOS + Windows</td>
+                                        <td class="p-2 font-mono text-indigo-300">2,600 (13%)</td>
+                                        <td class="p-2 text-emerald-400">+29% LTV</td>
+                                        <td class="p-2 text-slate-400">Work/Personal cross-use</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- 4. Free-to-Pro Conversion Triggers (Word Count Limits & Simulator) -->
+        <section class="glass-card rounded-2xl p-6 border border-white/10">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>
+                        Free-to-Pro Monetization Triggers & Simulator
+                    </h2>
+                    <p class="text-xs text-slate-400">Tracking conversion drivers when free word count thresholds and premium features are hit</p>
+                </div>
+                <div class="flex items-center gap-3 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-800">
+                    <span class="text-xs text-slate-400">Free Tier Limit:</span>
+                    <span class="text-xs font-mono font-bold text-violet-400">2,000 Free Words / Mo</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Left: Conversion Points Breakdown -->
+                <div class="lg:col-span-6 space-y-4">
+                    <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Top Pro Upgrade Trigger Drivers</h3>
+                    
+                    <div class="space-y-3">
+                        <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                                    <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-white">Reached 2,000 Words Free Limit</div>
+                                    <div class="text-[11px] text-slate-400">Monthly soft-cap limit prompt reached</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-sm font-bold font-mono text-purple-300">54.2%</span>
+                                <span class="text-[10px] text-slate-500 block">of all Pro conversions</span>
+                            </div>
+                        </div>
+
+                        <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                                    <i data-lucide="mic-off" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-white">Low-Decibel "Whisper Mode" Trigger</div>
+                                    <div class="text-[11px] text-slate-400">User attempted whisper dictation in public/office</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-sm font-bold font-mono text-cyan-300">22.8%</span>
+                                <span class="text-[10px] text-slate-500 block">of all Pro conversions</span>
+                            </div>
+                        </div>
+
+                        <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                                    <i data-lucide="book-open" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-white">Custom Dev Vocabulary Limit</div>
+                                    <div class="text-[11px] text-slate-400">Adding >10 technical jargon terms</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-sm font-bold font-mono text-indigo-300">14.5%</span>
+                                <span class="text-[10px] text-slate-500 block">of all Pro conversions</span>
+                            </div>
+                        </div>
+
+                        <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                                    <i data-lucide="file-output" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-white">Power Export & Integrations</div>
+                                    <div class="text-[11px] text-slate-400">Direct sync to Notion/Linear templates</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-sm font-bold font-mono text-emerald-300">8.5%</span>
+                                <span class="text-[10px] text-slate-500 block">of all Pro conversions</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Interactive Live Upgrade Simulator -->
+                <div class="lg:col-span-6 bg-slate-900/90 rounded-xl p-5 border border-violet-500/20 flex flex-col justify-between relative overflow-hidden">
+                    <div class="absolute -top-12 -right-12 w-32 h-32 bg-violet-600/10 rounded-full blur-2xl"></div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-xs font-bold text-violet-300 uppercase tracking-wider flex items-center gap-1.5">
+                                <i data-lucide="sliders" class="w-4 h-4"></i> Live Pro Conversion Predictive Simulator
+                            </h3>
+                            <span class="text-[10px] bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded-full">Interactive</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-6">Adjust monthly user word dictation volume to simulate conversion probability and upgrade path.</p>
+
+                        <!-- Slider -->
+                        <div class="space-y-2 mb-6">
+                            <div class="flex justify-between text-xs">
+                                <span class="text-slate-300 font-medium">Dictated Words / Month:</span>
+                                <span class="font-mono text-violet-300 font-bold text-sm" id="simWordCountText">2,400 Words</span>
+                            </div>
+                            <input type="range" id="simWordSlider" min="500" max="15000" step="100" value="2400" oninput="updateConversionSimulator(this.value)" class="w-full">
+                            <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                                <span>500 (Casual)</span>
+                                <span class="text-violet-400">2,000 (Limit Threshold)</span>
+                                <span>15,000+ (Heavy Power User)</span>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Prediction Box -->
+                        <div class="grid grid-cols-2 gap-3 p-4 rounded-xl bg-slate-950/80 border border-slate-800 mb-4">
+                            <div>
+                                <span class="text-[10px] text-slate-400 uppercase block font-semibold">Predicted Conversion Prob.</span>
+                                <span class="text-2xl font-extrabold font-mono text-emerald-400" id="simProbText">78.4%</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-slate-400 uppercase block font-semibold">Expected User Tier</span>
+                                <span class="text-sm font-bold text-purple-300 mt-1 block" id="simTierText">High Upgrade Propensity</span>
+                            </div>
+                        </div>
+
+                        <!-- Step Funnel Journey Preview -->
+                        <div class="text-xs text-slate-400">
+                            <span class="font-semibold text-slate-200 block mb-1">User Upgrade Trigger Journey:</span>
+                            <div class="p-2.5 rounded-lg bg-slate-950/40 border border-slate-800 text-[11px] text-slate-300" id="simJourneyText">
+                                User exceeds free quota (2,000 words) -> Modal prompt shown on next keypress -> 78% likelihood of converting within 48h.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 text-[10px] text-slate-500 text-center">
+                        Model calculated using historic 30-day cohort retention & limit trigger metrics.
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 5. Retention Heatmap & Dictation Modes Toggle -->
+        <section class="glass-card rounded-2xl p-6 border border-white/10">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        <i data-lucide="calendar" class="w-4 h-4 text-cyan-400"></i>
+                        Cohort Retention & Dictation Mode Usage
+                    </h2>
+                    <p class="text-xs text-slate-400">7-Day Cohort Retention Matrix filtered by primary active voice dictation mode</p>
+                </div>
+
+                <!-- Mode Selector Toggles -->
+                <div class="flex bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs font-medium">
+                    <button onclick="toggleDictationMode('all')" id="modeAllBtn" class="mode-btn px-3 py-1.5 rounded-lg text-white bg-violet-600 transition-all">All Modes</button>
+                    <button onclick="toggleDictationMode('auto')" id="modeAutoBtn" class="mode-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">✨ Auto-Edit Mode</button>
+                    <button onclick="toggleDictationMode('raw')" id="modeRawBtn" class="mode-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">🎙️ Raw Dictation</button>
+                    <button onclick="toggleDictationMode('whisper')" id="modeWhisperBtn" class="mode-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">🤫 Whisper Mode</button>
+                </div>
+            </div>
+
+            <!-- Heatmap Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs text-center border-collapse">
+                    <thead>
+                        <tr class="text-slate-400 text-[11px] border-b border-slate-800">
+                            <th class="p-3 text-left">Cohort (Weekly)</th>
+                            <th class="p-3">New Users</th>
+                            <th class="p-3">Day 0</th>
+                            <th class="p-3">Day 1</th>
+                            <th class="p-3">Day 2</th>
+                            <th class="p-3">Day 3</th>
+                            <th class="p-3">Day 4</th>
+                            <th class="p-3">Day 5</th>
+                            <th class="p-3">Day 6</th>
+                            <th class="p-3">Day 7</th>
+                        </tr>
+                    </thead>
+                    <tbody id="retentionHeatmapBody" class="divide-y divide-slate-800/50 font-mono">
+                        <!-- Dynamic Cohort Rows Generated JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Active Mode Summary -->
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400 pt-4 border-t border-slate-800">
+                <div class="flex items-center gap-4">
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-violet-600/90 inline-block"></span> High Retention (>60%)</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-violet-600/50 inline-block"></span> Mid Retention (30-60%)</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-violet-600/20 inline-block"></span> Low Retention (&lt;30%)</span>
+                </div>
+                <div class="text-slate-300 font-medium" id="retentionModeNote">
+                    Showing aggregate metrics across all active voice dictation modes.
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="max-w-7xl mx-auto px-4 lg:px-8 mt-12 text-center text-xs text-slate-500 space-y-1">
+        <p>Wispr Flow Product Analytics — Built for BuildrLabs</p>
+        <p class="font-mono text-[10px]">Simulated Real-Time Analytics Engine • Wispr AI Platform Intelligence</p>
+    </footer>
+
+    <!-- JavaScript logic -->
+    <script>
+        // Global State
+        let currentRange = '30D';
+        let currentPlatform = 'all';
+        let currentMode = 'all';
+
+        // Chart Instances
+        let funnelChartInstance = null;
+        let timeDistChartInstance = null;
+        let multiHomingChartInstance = null;
+
+        // Base Data Sets for Multi-platform & Ranges
+        const mockData = {
+
+            '30D': {
+                all: {
+                    dauMau: '42.8%', dau: '18.4k', mau: '43.0k',
+                    timeToDict: '4.2 min', conversion: '4.82%', multiHoming: '2.75',
+                    funnel: [28450, 25150, 21680, 19488],
+                    timeDist: [42, 31, 18, 9],
+                    contexts: [41.5, 34.2, 24.3]
+                },
+                macos: {
+                    dauMau: '48.1%', dau: '11.2k', mau: '23.2k',
+                    timeToDict: '3.4 min', conversion: '6.10%', multiHoming: '3.10',
+                    funnel: [15000, 13800, 12600, 11700],
+                    timeDist: [52, 28, 14, 6],
+                    contexts: [38.0, 42.0, 20.0]
+                },
+                windows: {
+                    dauMau: '38.4%', dau: '5.1k', mau: '13.2k',
+                    timeToDict: '4.9 min', conversion: '3.80%', multiHoming: '2.30',
+                    funnel: [8500, 7200, 6000, 5200],
+                    timeDist: [35, 34, 20, 11],
+                    contexts: [45.0, 28.0, 27.0]
+                },
+                ios: {
+                    dauMau: '39.0%', dau: '1.4k', mau: '3.6k',
+                    timeToDict: '4.8 min', conversion: '2.90%', multiHoming: '1.90',
+                    funnel: [3000, 2600, 2000, 1600],
+                    timeDist: [30, 32, 24, 14],
+                    contexts: [58.0, 12.0, 30.0]
+                },
+                android: {
+                    dauMau: '36.2%', dau: '0.7k', mau: '2.0k',
+                    timeToDict: '5.3 min', conversion: '2.10%', multiHoming: '1.60',
+                    funnel: [1950, 1550, 1080, 988],
+                    timeDist: [28, 30, 26, 16],
+                    contexts: [62.0, 8.0, 30.0]
+                }
+            },
+            '7D': {
+                all: {
+                    dauMau: '46.2%', dau: '20.1k', mau: '43.5k',
+                    timeToDict: '3.9 min', conversion: '5.10%', multiHoming: '2.82',
+                    funnel: [7200, 6480, 5600, 5100],
+                    timeDist: [45, 32, 15, 8],
+                    contexts: [40.0, 36.0, 24.0]
+                }
+            },
+            '90D': {
+                all: {
+                    dauMau: '40.1%', dau: '16.8k', mau: '41.8k',
+                    timeToDict: '4.6 min', conversion: '4.45%', multiHoming: '2.60',
+                    funnel: [82000, 71000, 60500, 53200],
+                    timeDist: [39, 30, 20, 11],
+                    contexts: [43.0, 32.0, 25.0]
+                }
+            }
+        };
+
+        // Cohort Retention Heatmap Base Data
+        const cohortData = {
+            all: [
+                { week: 'Oct 09 - Oct 15', users: '4,250', ret: [100, 78, 68, 62, 58, 55, 53, 51] },
+                { week: 'Oct 02 - Oct 08', users: '4,100', ret: [100, 76, 66, 60, 56, 53, 50, 48] },
+                { week: 'Sep 25 - Oct 01', users: '3,950', ret: [100, 74, 63, 58, 54, 51, 48, 46] },
+                { week: 'Sep 18 - Sep 24', users: '4,300', ret: [100, 77, 67, 61, 57, 54, 52, 49] },
+                { week: 'Sep 11 - Sep 17', users: '3,800', ret: [100, 73, 62, 56, 52, 49, 47, 45] }
+            ],
+            auto: [
+                { week: 'Oct 09 - Oct 15', users: '2,800', ret: [100, 84, 76, 71, 68, 66, 64, 62] },
+                { week: 'Oct 02 - Oct 08', users: '2,650', ret: [100, 82, 74, 69, 66, 63, 61, 59] },
+                { week: 'Sep 25 - Oct 01', users: '2,500', ret: [100, 81, 72, 67, 64, 61, 59, 57] },
+                { week: 'Sep 18 - Sep 24', users: '2,900', ret: [100, 85, 77, 72, 69, 67, 65, 63] },
+                { week: 'Sep 11 - Sep 17', users: '2,400', ret: [100, 80, 71, 65, 62, 59, 57, 55] }
+            ],
+            raw: [
+                { week: 'Oct 09 - Oct 15', users: '950', ret: [100, 62, 50, 43, 38, 34, 31, 28] },
+                { week: 'Oct 02 - Oct 08', users: '900', ret: [100, 60, 48, 41, 36, 32, 29, 26] },
+                { week: 'Sep 25 - Oct 01', users: '880', ret: [100, 58, 46, 39, 34, 30, 27, 25] },
+                { week: 'Sep 18 - Sep 24', users: '920', ret: [100, 61, 49, 42, 37, 33, 30, 27] },
+                { week: 'Sep 11 - Sep 17', users: '850', ret: [100, 57, 44, 38, 33, 29, 26, 24] }
+            ],
+            whisper: [
+                { week: 'Oct 09 - Oct 15', users: '500', ret: [100, 88, 82, 79, 76, 75, 74, 73] },
+                { week: 'Oct 02 - Oct 08', users: '550', ret: [100, 86, 80, 77, 74, 73, 71, 70] },
+                { week: 'Sep 25 - Oct 01', users: '570', ret: [100, 85, 79, 75, 73, 71, 70, 68] },
+                { week: 'Sep 18 - Sep 24', users: '480', ret: [100, 89, 84, 80, 78, 76, 75, 74] },
+                { week: 'Sep 11 - Sep 17', users: '550', ret: [100, 84, 78, 74, 71, 69, 68, 66] }
+            ]
+        };
+
+        // Initialize on Page Load
+        window.onload = function() {
+            lucide.createIcons();
+            initCharts();
+            updateDashboardData();
+            renderRetentionHeatmap();
+            
+            // Periodically trigger a subtle pulse indicator update
+            setInterval(() => {
+                const pulse = document.getElementById('livePulse');
+                pulse.classList.add('text-white');
+                setTimeout(() => pulse.classList.remove('text-white'), 500);
+            }, 5000);
+        };
+
+        // Time Range Setter
+        function setTimeRange(range) {
+            currentRange = range;
+            const buttons = document.querySelectorAll('.time-btn');
+            buttons.forEach(btn => {
+                if (btn.getAttribute('data-range') === range) {
+                    btn.className = "time-btn px-3 py-1 rounded-md text-white bg-violet-600 shadow-sm transition-all font-medium";
+                } else {
+                    btn.className = "time-btn px-3 py-1 rounded-md text-slate-400 hover:text-white transition-all";
+                }
+            });
+            updateDashboardData();
+        }
+
+        // Main Dashboard Update Handler
+        function updateDashboardData() {
+            currentPlatform = document.getElementById('platformSelect').value;
+            
+            // Get Dataset or fallback
+            let data = (mockData[currentRange] && mockData[currentRange][currentPlatform]) 
+                       ? mockData[currentRange][currentPlatform] 
+                       : mockData['30D']['all'];
+
+            if (!data) data = mockData['30D']['all'];
+
+            // Update KPI Card UI
+            document.getElementById('kpiDauMau').innerText = data.dauMau;
+            document.getElementById('kpiDauVal').innerText = data.dau;
+            document.getElementById('kpiMauVal').innerText = data.mau;
+            document.getElementById('kpiTimeToDict').innerText = data.timeToDict;
+            document.getElementById('kpiConversionRate').innerText = data.conversion;
+            document.getElementById('kpiMultiHoming').innerText = data.multiHoming;
+
+            // Update Funnel Chart
+            if (funnelChartInstance) {
+                funnelChartInstance.data.datasets[0].data = data.funnel;
+                funnelChartInstance.update();
+            }
+
+            // Update Time Dist Chart
+            if (timeDistChartInstance) {
+                timeDistChartInstance.data.datasets[0].data = data.timeDist;
+                timeDistChartInstance.update();
+            }
+
+            // Update Multi Homing Chart
+            if (multiHomingChartInstance) {
+                multiHomingChartInstance.data.datasets[0].data = data.contexts;
+                multiHomingChartInstance.update();
+            }
+
+            // Update Total Funnel Users text
+            document.getElementById('funnelTotalUsers').innerText = `Total: ${data.funnel[0].toLocaleString()} Users`;
+        }
+
+        // Initialize Chart.js Instances
+        function initCharts() {
+            const chartDefaults = {
+                color: '#94a3b8',
+                font: { family: 'Inter' }
+            };
+
+            // 1. Activation Funnel Chart (Horizontal Bar Chart)
+            const ctxFunnel = document.getElementById('activationFunnelChart').getContext('2d');
+            funnelChartInstance = new Chart(ctxFunnel, {
+                type: 'bar',
+                data: {
+                    labels: ['1. Downloaded', '2. First Launch', '3. Mic Granted', '4. First Dictation'],
+                    datasets: [{
+                        data: [28450, 25150, 21680, 19488],
+                        backgroundColor: [
+                            'rgba(139, 92, 246, 0.4)',
+                            'rgba(167, 139, 250, 0.6)',
+                            'rgba(6, 182, 212, 0.7)',
+                            'rgba(16, 185, 129, 0.9)'
+                        ],
+                        borderColor: [
+                            '#8b5cf6',
+                            '#a78bfa',
+                            '#06b6d4',
+                            '#10b981'
+                        ],
+                        borderWidth: 1.5,
+                        borderRadius: 8,
+                        barThickness: 24
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data[0];
+                                    const val = context.raw;
+                                    const pct = ((val / total) * 100).toFixed(1);
+                                    return ` Users: ${val.toLocaleString()} (${pct}% of total)`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { color: '#f3f4f6', font: { weight: 'bold' } }
+                        }
+                    }
+                }
+            });
+
+            // 2. Speed to First Dictation Chart (Bar)
+            const ctxTime = document.getElementById('timeDistributionChart').getContext('2d');
+            timeDistChartInstance = new Chart(ctxTime, {
+                type: 'bar',
+                data: {
+                    labels: ['< 2 mins', '2 - 5 mins', '5 - 15 mins', '15+ mins'],
+                    datasets: [{
+                        label: '% of Users',
+                        data: [42, 31, 18, 9],
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(6, 182, 212, 0.8)',
+                            'rgba(167, 139, 250, 0.7)',
+                            'rgba(239, 68, 68, 0.6)'
+                        ],
+                        borderRadius: 6,
+                        barThickness: 32
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` ${ctx.raw}% of onboarding cohorts`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8', callback: (v) => v + '%' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#f3f4f6' }
+                        }
+                    }
+                }
+            });
+
+            // 3. Multi-Homing Context Doughnut Chart
+            const ctxMulti = document.getElementById('multiHomingChart').getContext('2d');
+            multiHomingChartInstance = new Chart(ctxMulti, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Messaging (Slack/WhatsApp)', 'Dev Environments (Cursor/VS Code)', 'Email & Docs (Gmail/Notion)'],
+                    datasets: [{
+                        data: [41.5, 34.2, 24.3],
+                        backgroundColor: [
+                            'rgba(139, 92, 246, 0.85)',
+                            'rgba(6, 182, 212, 0.85)',
+                            'rgba(99, 102, 241, 0.85)'
+                        ],
+                        borderColor: '#090a0f',
+                        borderWidth: 3,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` ${ctx.label}: ${ctx.raw}%`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Tab Switching Logic for Context Deep Dive
+        function switchContextTab(tabName) {
+            const tabs = [
+                { key: 'volume', btnId: 'tabVolBtn', contentId: 'tabContentVolume' },
+                { key: 'shortcuts', btnId: 'tabShortcutsBtn', contentId: 'tabContentShortcuts' },
+                { key: 'overlap', btnId: 'tabOverlapBtn', contentId: 'tabContentOverlap' }
+            ];
+
+            tabs.forEach(tab => {
+                const btn = document.getElementById(tab.btnId);
+                const content = document.getElementById(tab.contentId);
+                
+                if (btn && content) {
+                    if (tab.key === tabName) {
+                        btn.className = "px-3 py-1 rounded-md text-white bg-violet-600 font-medium transition-all";
+                        content.classList.remove('hidden');
+                    } else {
+                        btn.className = "px-3 py-1 rounded-md text-slate-400 hover:text-white transition-all";
+                        content.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
+        // Pro Conversion Simulator Input Logic
+        function updateConversionSimulator(words) {
+            document.getElementById('simWordCountText').innerText = `${parseInt(words).toLocaleString()} Words`;
+
+            let prob = 0;
+            let tier = '';
+            let journey = '';
+
+            const w = parseInt(words);
+
+            if (w < 1500) {
+                prob = (w / 2000 * 25).toFixed(1);
+                tier = 'Free Tier Comfortable';
+                journey = 'User is well within free 2,000 monthly words limit. Minimal conversion pressure.';
+            } else if (w >= 1500 && w < 2000) {
+                prob = (25 + ((w - 1500) / 500) * 35).toFixed(1);
+                tier = 'Approaching Free Limit';
+                journey = '80% word capacity warning banner shown in UI. High engagement signals detected.';
+            } else if (w >= 2000 && w < 5000) {
+                prob = (60 + ((w - 2000) / 3000) * 28).toFixed(1);
+                tier = 'High Pro Conversion Zone';
+                journey = 'Free 2,000 word cap reached! In-line upgrade popover active on dictation keypress.';
+            } else {
+                prob = Math.min(98.5, (88 + ((w - 5000) / 10000) * 10)).toFixed(1);
+                tier = 'Power User (High LTV)';
+                journey = 'Heavy daily reliance! User dictates daily across >3 apps. High conversion & zero churn likelihood.';
+            }
+
+            document.getElementById('simProbText').innerText = `${prob}%`;
+            document.getElementById('simTierText').innerText = tier;
+            document.getElementById('simJourneyText').innerText = journey;
+        }
+
+        // Retention Matrix Dictation Mode Toggle
+        function toggleDictationMode(mode) {
+            currentMode = mode;
+            const buttons = [
+                { id: 'modeAllBtn', mode: 'all' },
+                { id: 'modeAutoBtn', mode: 'auto' },
+                { id: 'modeRawBtn', mode: 'raw' },
+                { id: 'modeWhisperBtn', mode: 'whisper' }
+            ];
+
+            buttons.forEach(b => {
+                const btnElem = document.getElementById(b.id);
+                if (b.mode === mode) {
+                    btnElem.className = "mode-btn px-3 py-1.5 rounded-lg text-white bg-violet-600 transition-all font-medium";
+                } else {
+                    btnElem.className = "mode-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all";
+                }
+            });
+
+            const modeNotes = {
+                all: 'Showing aggregate metrics across all active voice dictation modes.',
+                auto: '✨ Auto-Edit Mode users show +24% higher Day-7 retention due to instant cleanups.',
+                raw: '🎙️ Raw Dictation users represent fast, unformatted note-takers.',
+                whisper: '🤫 Low-Decibel Whisper Mode users have highest 30-day stickiness (82% Pro conversions).'
+            };
+
+            document.getElementById('retentionModeNote').innerText = modeNotes[mode];
+            renderRetentionHeatmap();
+        }
+
+        // Render Cohort Heatmap Table
+        function renderRetentionHeatmap() {
+            const data = cohortData[currentMode] || cohortData['all'];
+            const tbody = document.getElementById('retentionHeatmapBody');
+            tbody.innerHTML = '';
+
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-900/40 transition-colors';
+
+                let cellsHTML = `
+                    <td class="p-3 text-left font-sans font-medium text-slate-200">${row.week}</td>
+                    <td class="p-3 text-slate-400">${row.users}</td>
+                `;
+
+                row.ret.forEach((val, idx) => {
+                    // Color intensity logic based on retention value
+                    let opacity = (val / 100).toFixed(2);
+                    let bgColor = `rgba(124, 58, 237, ${opacity * 0.7})`;
+                    let textColor = val > 50 ? '#ffffff' : '#cbd5e1';
+
+                    cellsHTML += `
+                        <td class="p-2">
+                            <div class="py-1.5 px-2 rounded-lg font-mono text-xs font-semibold" style="background-color: ${bgColor}; color: ${textColor};">
+                                ${val}%
+                            </div>
+                        </td>
+                    `;
+                });
+
+                tr.innerHTML = cellsHTML;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Simulated Refresh Animation
+        function triggerSimulatedRefresh() {
+            const icon = document.getElementById('refreshIcon');
+            icon.classList.add('animate-spin');
+            
+            setTimeout(() => {
+                icon.classList.remove('animate-spin');
+                updateDashboardData();
+            }, 600);
+        }
+    </script>
+</body>
+</html>
